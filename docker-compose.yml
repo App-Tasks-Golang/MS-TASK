@@ -1,0 +1,39 @@
+services:
+  db-task:
+    image: mysql:8.0  # Cambiar de PostgreSQL a MySQL
+    container_name: DB-TASK
+    environment:
+      MYSQL_ROOT_PASSWORD: ${TASK_PASSWORD}  # Contraseña del usuario root de MySQL
+      MYSQL_DATABASE: ${TASK_NAME}  # Nombre de la base de datos
+    ports:
+      - "3306:3306"  # Exponer el puerto 3306 para MySQL
+    volumes:
+      - mysql_task_data:/var/lib/mysql  # Persistencia de datos para MySQL
+    networks:
+      - app_network
+
+  app:
+    build:
+      context: .  # Carpeta de la aplicación
+      dockerfile: Dockerfile  # Dockerfile de la app
+    container_name: TASK-SERVICE
+    environment:
+      - TASK_MYSQL_HOST=${TASK_HOST}  # Dirección del contenedor MySQL
+      - TASK_MYSQL_PORT=${TASK_PORT}  # Puerto de MySQL
+      - TASK_MYSQL_USER=${TASK_ROOT}  # Usuario de MySQL
+      - TASK_MYSQL_PASSWORD=${TASK_PASSWORD}  # Contraseña de MySQL
+      - TASK_MYSQL_DB=${TASK_NAME}  # Nombre de la base de datos
+    depends_on:
+      - db-task
+    ports:
+      - "8080:8080"  # Exponer el puerto de tu app Go si es necesario
+    networks:
+      - app_network  # Asegura que la app está en la misma red que MySQL
+
+volumes:
+  mysql_task_data:
+    driver: local  # Volumen para persistencia de datos de MySQL
+
+networks:
+  app_network:
+    driver: bridge  # La red de tipo bridge asegura que todos los servicios puedan comunicarse entre sí
